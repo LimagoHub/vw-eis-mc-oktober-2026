@@ -111,7 +111,7 @@ Der Quarz ist das kleine glänzende Metallgehäuse neben dem Sockel. Er gibt dem
 
 **Auf euren Boards sitzt ein 8-MHz-Quarz.** Acht Millionen Schwingungen pro Sekunde. Diese Zahl brauchst du später an zwei Stellen, merke sie dir:
 
-- Im Programm, als `F_CPU = 8000000UL`
+- In der Projektdatei `CMakeLists.txt`, als `F_CPU = 8000000UL` (siehe Teil 7.1)
 - Bei den Fuses, damit der Chip den Quarz überhaupt benutzt
 
 Wenn du auf dem Quarzgehäuse nachsiehst, steht dort `8.000` oder `8.000 MHz`.
@@ -125,26 +125,42 @@ Der Chip sitzt in einem **ZIF-Sockel** (*Zero Insertion Force*, „ohne Kraftauf
 1. **Strom weg.** Programmiergerät abziehen, Netzteil trennen. Nicht bei anliegender Spannung wechseln.
 2. **Hebel hochstellen.** Er steht dann senkrecht, die Kontakte im Sockel sind offen.
 3. **Alten Chip gerade herausheben.** Nicht verkanten.
-4. **Neuen Chip einsetzen.** Auf die **Kerbe** achten — siehe unten.
+4. **Neuen Chip einsetzen.** Auf die **Kerbe** achten — sie zeigt zum Stromanschluss, siehe unten.
 5. **Hebel herunterdrücken**, bis er einrastet.
 6. **Erst jetzt** Strom anlegen.
 
-### Die Kerbe
+### Die Kerbe — in welche Richtung?
 
-An einem Ende des Chips ist eine halbrunde Kerbe eingeprägt. Sie markiert, wo Pin 1 liegt. Auf dem Sockel und meist auch auf der Platine ist dieselbe Markierung aufgedruckt.
+An einem Ende des Chips ist eine halbrunde Kerbe eingeprägt. Sie markiert das Ende, an dem Pin 1 liegt.
+
+Auf **eurem** Board gilt:
+
+> ## ⚠️ Die Kerbe zeigt zum STROMANSCHLUSS.
+>
+> ## Nicht zur ISP-Stiftleiste!
 
 ```
-        ╭──╮
-    ┌───╯  ╰───┐
- 1 ─┤          ├─ 40
- 2 ─┤          ├─ 39
-    │   Kerbe  │
-    │   oben   │
-20 ─┤          ├─ 21
-    └──────────┘
+          Stromanschluss
+                ▲
+                │
+        ┌───────────────┐
+        │   ╭───────╮   │   ← Kerbe zeigt nach oben,
+        │ 1 ╰───────╯40 │     also zum Stromanschluss
+        │               │
+        │    ATmega32   │
+        │               │
+        │ 20         21 │
+        └───────────────┘
+                │
+                ▼
+          ISP-Stiftleiste
 ```
 
-> ⚠️ **Setzt du den Chip verdreht ein und schaltest den Strom an, ist er meistens hinüber.** Die Kerbe kontrollieren, bevor du den Hebel schließt. Dann noch einmal, bevor du den Strom anlegst.
+Dreh das Board so hin, dass der Stromanschluss oben liegt. Dann muss die Kerbe des Chips ebenfalls nach oben zeigen.
+
+> ⚠️ **Setzt du den Chip andersherum ein und schaltest den Strom an, ist er praktisch immer zerstört.** Dann liegen Versorgungsspannung und Masse vertauscht an, und der Chip erhitzt sich innerhalb von Sekunden.
+>
+> **Kontrolliere die Kerbe zweimal:** einmal, bevor du den Hebel schließt, und noch einmal, bevor du den Strom anlegst. Das kostet fünf Sekunden und spart im Zweifel einen Chip.
 
 > ⚠️ **Statische Aufladung.** Fass vor dem Anfassen loser Chips kurz an ein geerdetes Metallteil, zum Beispiel ein Gehäuse eines eingesteckten Geräts. Elektronik verträgt die Entladung aus einem Pulloverärmel nicht immer.
 
@@ -173,7 +189,7 @@ Der wird erst in Teil 10 gebraucht. Drei Drähte:
 Viele Boards führen PD0, PD1 und GND schon auf eine eigene kleine Stiftleiste. Wenn deines das hat, nimm die — dann musst du nicht am Sockel herumstochern.
 
 > ### ✅ Kontrolle
-> - Der Chip sitzt im Sockel, Kerbe in der richtigen Richtung, Hebel eingerastet.
+> - Der Chip sitzt im Sockel, die **Kerbe zeigt zum Stromanschluss**, der Hebel ist eingerastet.
 > - Du hast auf dem Quarz nachgesehen und dort steht 8 MHz.
 > - Du weißt, wo die ISP-Stiftleiste sitzt.
 
@@ -620,16 +636,33 @@ Jetzt muss CLion noch erfahren, dass es die Toolchain-Datei benutzen soll.
 2. Links im Baum: **Build, Execution, Deployment** → **CMake**
 3. Im rechten Bereich gibt es ein Feld **CMake options**. Trage dort ein:
    ```
-   -DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/avr-toolchain.cmake
+   -DCMAKE_TOOLCHAIN_FILE=avr-toolchain.cmake
    ```
+   Das funktioniert, weil CMake relative Pfade auf den Projektordner bezieht — und dort liegt die Datei.
 4. Etwas weiter unten ein Feld **Generator**. Stelle dort **Ninja** ein. (Falls Ninja nicht auswählbar ist, geht auch *MinGW Makefiles*. **Nicht** Visual Studio — das funktioniert mit avr-gcc nicht.)
 5. **OK**
 
-> 💡 Falls CLion die Variable `${CMAKE_SOURCE_DIR}` nicht auflöst und einen Fehler meldet, trage stattdessen den vollständigen Pfad ein, zum Beispiel:
-> ```
-> -DCMAKE_TOOLCHAIN_FILE=C:/Users/DEINNAME/avr/hello/avr-toolchain.cmake
-> ```
-> Beachte: **Schrägstriche nach vorn**, auch unter Windows.
+### Falls die kurze Schreibweise nicht funktioniert
+
+Manche CLion-Versionen legen das Build-Verzeichnis so an, dass der relative Pfad nicht mehr passt. Dann gibt es zwei Ausweichmöglichkeiten.
+
+**Variante 2 — mit CMake-Variable:**
+
+```
+-DCMAKE_TOOLCHAIN_FILE=${CMAKE_SOURCE_DIR}/avr-toolchain.cmake
+```
+
+`${CMAKE_SOURCE_DIR}` ist der Projektordner. CMake setzt den Pfad selbst ein.
+
+**Variante 3 — vollständiger Pfad:**
+
+```
+-DCMAKE_TOOLCHAIN_FILE=C:/Users/DEINNAME/avr/hello/avr-toolchain.cmake
+```
+
+Das geht immer, muss aber auf jedem Rechner einzeln angepasst werden.
+
+> ⚠️ **Schrägstriche nach vorn**, auch unter Windows. CMake kommt mit Rückwärtsschrägstrichen nicht zurecht — `C:\Users\...` führt zu einer Fehlermeldung.
 
 ## 6.6 — Projekt neu laden
 
@@ -660,6 +693,58 @@ Unten öffnet sich ein Fenster mit der CMake-Ausgabe.
 ---
 
 # Teil 7 — Das erste Programm
+
+## 7.1 — Wo F_CPU herkommt
+
+**Wenn du schon einmal AVR-Code gesehen hast, achte hier besonders auf einen Unterschied.**
+
+In älteren Unterlagen und in fast allen Beispielen im Internet steht die Taktfrequenz oben im Quelltext:
+
+```c
+/* SO NICHT - nur zur Erklaerung, was frueher ueblich war */
+#define F_CPU 8000000UL
+#include <util/delay.h>
+```
+
+**Bei uns steht `F_CPU` nicht mehr im Code, sondern in der `CMakeLists.txt`:**
+
+```cmake
+set(F_CPU 8000000UL)
+```
+
+Von dort gibt CMake den Wert an den Compiler weiter — über die Zeile
+
+```cmake
+-DF_CPU=${F_CPU}
+```
+
+in den Compiler-Optionen. Das `-D` bedeutet „definiere". Der Compiler verhält sich dann so, als stünde `#define F_CPU 8000000UL` ganz oben in jeder Quelldatei.
+
+### Warum das besser ist
+
+**Die Taktfrequenz ist eine Eigenschaft der Hardware, nicht des Programms.** Sie hängt davon ab, welcher Quarz auf dem Board sitzt — nicht davon, was dein Programm tut.
+
+Sobald ein Projekt aus mehreren `.c`-Dateien besteht, wird das wichtig. Steht `#define F_CPU` in jeder Datei einzeln, musst du bei einem Hardwarewechsel jede davon anfassen. Vergisst du eine, übersetzt der Compiler ohne Fehlermeldung — die eine Datei rechnet dann mit einer anderen Taktfrequenz als der Rest. Solche Fehler zu finden ist unangenehm, weil das Programm läuft und nur die Zeiten nicht stimmen.
+
+Mit dem Wert in der `CMakeLists.txt` gibt es **eine einzige Stelle**, die ihn festlegt. Sie gilt automatisch für alle Quelldateien.
+
+### Die Sicherung im Code
+
+Deshalb steht ganz oben in `main.c`:
+
+```c
+#ifndef F_CPU
+#  error "F_CPU fehlt - kommt normalerweise aus der CMakeLists.txt"
+#endif
+```
+
+Das heißt: „Wenn `F_CPU` nicht definiert ist, brich mit einer Fehlermeldung ab."
+
+Ohne diese Zeilen würde `<util/delay.h>` stillschweigend **1 MHz** annehmen. Das Programm würde übersetzen, flashen und laufen — nur achtmal zu langsam, und die serielle Ausgabe käme als Zeichensalat an. Mit der Sicherung merkst du den Fehler sofort beim Übersetzen statt nach einer halben Stunde Fehlersuche.
+
+> ⚠️ **Schreib `#define F_CPU` nicht zusätzlich in den Quelltext.** Dann hättest du zwei Stellen, an denen derselbe Wert steht, und irgendwann unterscheiden sie sich. Der Compiler warnt in diesem Fall zwar meist, aber verlass dich nicht darauf.
+
+## 7.2 — Der Quelltext
 
 Öffne `main.c`, markiere alles (Strg+A), lösche es und füge ein:
 
@@ -749,6 +834,66 @@ Speichern mit Strg+S.
 
 **Der `#error`-Block ganz oben** ist eine Sicherung. Fehlt `F_CPU`, würde `<util/delay.h>` stillschweigend von 1 MHz ausgehen und alle Zeiten wären um Faktor 8 falsch. Der Fehler ist schwer zu finden — deshalb bricht das Programm lieber gleich beim Übersetzen ab.
 
+## 7.3 — Später: derselbe Chip mit 16 MHz
+
+Die Chips, mit denen du hier übst, werden später in einer Baugruppe eingesetzt, die mit **16 MHz** läuft. Deshalb lohnt es sich, jetzt zu verstehen, was sich dabei ändert — und was nicht.
+
+### Was sich ändert: F_CPU
+
+In der `CMakeLists.txt`:
+
+```cmake
+set(F_CPU 16000000UL)     # statt 8000000UL
+```
+
+Danach **Projekt neu laden, neu bauen, neu flashen.** Es genügt nicht, nur die Zeile zu ändern.
+
+Der Quelltext bleibt dabei **unverändert**. Genau das ist der Vorteil daran, dass `F_CPU` nicht im Code steht: Ein Zahlenwert an einer Stelle, und das ganze Projekt passt sich an.
+
+Was sich dadurch automatisch mitkorrigiert:
+
+- `_delay_ms()` wartet weiterhin die richtige Zeit
+- Die Baudrate des UART bleibt bei 9600, weil `<util/setbaud.h>` neu rechnet
+- Alle Timer-Berechnungen, die du später einmal auf `F_CPU` aufbaust
+
+### Was sich nicht ändert: die Fuses
+
+Die Fuse-Einstellung `lfuse = 0xFF`, `hfuse = 0xD9` sagt dem Chip nur: *„Nimm den Takt vom Quarz."* Sie sagt ihm nicht, **wie schnell** dieser Quarz schwingt. Das ergibt sich von selbst aus dem Bauteil auf der Platine.
+
+Für den Bereich bis 8 MHz passt diese Einstellung. Für 16 MHz gibt es eine Feinheit:
+
+| | 8 MHz | 16 MHz |
+|---|---|---|
+| lfuse | `0xFF` | `0xFF` |
+| hfuse | `0xD9` | **`0xC9`** |
+
+Der Unterschied steckt im Bit **CKOPT** (Bit 4 des hfuse). Es bestimmt, wie kräftig der eingebaute Quarzverstärker arbeitet:
+
+- `0xD9` — CKOPT nicht gesetzt: sparsamer Betrieb, laut Datenblatt bis 8 MHz spezifiziert
+- `0xC9` — CKOPT gesetzt: kräftigerer Betrieb, für 1 bis 16 MHz spezifiziert
+
+In der Praxis läuft `0xC9` auch bei 8 MHz problemlos. Wer nur eine einzige Einstellung für beide Fälle haben will, nimmt durchgängig `0xC9`. Wir benutzen hier trotzdem `0xD9`, weil das bei 8 MHz die vom Hersteller vorgesehene Betriebsart ist.
+
+> ⚠️ **Drei Dinge müssen zusammenpassen**, sonst läuft das Gerät falsch oder gar nicht:
+>
+> 1. Der **Quarz** auf der Platine
+> 2. Der Wert **F_CPU** in der `CMakeLists.txt`
+> 3. Die **Fuses** im Chip
+>
+> Stimmt einer der drei nicht, merkst du es meist erst an der seriellen Ausgabe — dort kommt dann Zeichensalat an.
+
+### Woran du erkennst, dass etwas nicht zusammenpasst
+
+| Symptom | Ursache |
+|---|---|
+| Alles läuft **achtmal zu langsam** | Fuses stehen noch auf Werkseinstellung, Chip nutzt den internen 1-MHz-Taktgeber |
+| Alles läuft **doppelt zu schnell** | `F_CPU` auf 8 MHz gesetzt, Board hat aber 16 MHz |
+| Alles läuft **halb so schnell** | `F_CPU` auf 16 MHz gesetzt, Board hat aber 8 MHz |
+| Serielle Ausgabe unlesbar | einer der drei Punkte oben stimmt nicht |
+| Chip meldet sich gar nicht mehr | Fuses auf Quarz gesetzt, aber kein funktionierender Quarz vorhanden |
+
+**Merksatz für später:** Wenn du einen Chip aus dem Übungsboard in die 16-MHz-Baugruppe umsetzt, musst du sowohl die Fuses anpassen als auch ein mit `F_CPU = 16000000UL` gebautes Programm aufspielen.
+
 > ### ✅ Kontrolle
 > Die Datei ist gespeichert. CLion zeigt bei `UBRRH`, `UCSRA` und den anderen Registernamen **keine rote Unterringelung**.
 >
@@ -758,14 +903,66 @@ Speichern mit Strg+S.
 
 # Teil 8 — Bauen
 
-„Bauen" heißt: aus dem C-Code eine Datei machen, die der Chip versteht. Der Chip wird dabei noch nicht angefasst.
+„Bauen" heißt: aus dem C-Code eine Datei machen, die der Chip versteht. Der Chip wird dabei noch nicht angefasst — er muss dafür nicht einmal angeschlossen sein.
 
-1. Oben rechts in der Auswahlliste **`hello.elf`** wählen.
-2. Auf das **Hammer-Symbol** klicken (oder Strg+F9).
+## 8.1 — Die Werkzeugleiste oben rechts
 
-Unten öffnet sich das Build-Fenster.
+Bevor du loslegst, sieh dir die Leiste oben rechts im CLion-Fenster an. Darauf kommt es jetzt an:
 
-## Was in der Ausgabe stehen muss
+```
+   ┌──────────────────┐
+   │  hello.elf    v  │    [Hammer]  [Pfeil]  [Kaefer]
+   └──────────────────┘
+      Auswahlfeld          bauen    starten   debuggen
+        (Target)
+```
+
+### Das Auswahlfeld
+
+Hier wählst du aus, **was** gemacht werden soll. Man nennt die Einträge **Targets** (Ziele). Deine `CMakeLists.txt` legt fünf davon an:
+
+| Target | Was es tut | Chip nötig? |
+|---|---|---|
+| `hello.elf` | Übersetzt den Code und erzeugt die HEX-Datei | nein |
+| `flash` | Baut bei Bedarf neu und lädt das Programm in den Chip | **ja** |
+| `fuses` | Schreibt die Fuse-Einstellungen | **ja** |
+| `readfuses` | Liest die Fuses aus und zeigt sie an | **ja** |
+| `testconnection` | Prüft, ob der Chip antwortet | **ja** |
+
+Klick das Feld an, und die Liste klappt auf. Die vier unteren Einträge sind keine Programme — es sind Befehle, die CLion für dich ausführt, damit du nicht jedes Mal in die PowerShell wechseln musst.
+
+> ⚠️ **Steht in dem Feld nur `hello.elf` und sonst nichts**, hat CMake die `CMakeLists.txt` nicht richtig gelesen. Zurück zu Teil 6.6 und das Projekt neu laden.
+
+### Hammer oder grüner Pfeil?
+
+Das ist der Unterschied, der am Anfang für Verwirrung sorgt:
+
+| | **Hammer-Symbol** | **Grüner Pfeil** |
+|---|---|---|
+| Heißt | *Build* | *Run* |
+| Tastenkürzel | Strg+F9 | Umschalt+F10 |
+| Tut | **nur bauen** | **bauen, dann ausführen** |
+| Beim Target `hello.elf` | übersetzt den Code | übersetzt — und versucht dann, das Programm auf dem PC zu starten. **Das geht nicht** und gibt eine Fehlermeldung |
+| Beim Target `flash` | tut nichts Sinnvolles | baut und ruft dann avrdude auf — **das willst du** |
+
+**Als Faustregel:**
+
+- Zum reinen Übersetzen: Target `hello.elf` wählen, **Hammer** drücken
+- Zum Aufspielen: Target `flash` wählen, **grünen Pfeil** drücken
+- Für `fuses`, `readfuses`, `testconnection`: ebenfalls **grüner Pfeil**
+
+Der Grund: Der Hammer baut nur. Unsere Zusatz-Targets *sind* aber Befehle, die ausgeführt werden müssen — also braucht es den Pfeil.
+
+> 💡 **Das Käfer-Symbol daneben ist der Debugger.** Den brauchst du hier nicht. Er würde versuchen, das Programm auf dem PC anzuhalten und schrittweise durchzugehen — das funktioniert bei AVR-Programmen ohne Zusatzhardware nicht. Finger weg, sonst bekommst du verwirrende Fehlermeldungen.
+
+## 8.2 — Übersetzen
+
+1. Im Auswahlfeld **`hello.elf`** wählen.
+2. Auf den **Hammer** klicken (oder Strg+F9).
+
+Unten im Fenster öffnet sich der Reiter **Build** und zeigt, was passiert.
+
+## 8.3 — Was in der Ausgabe stehen muss
 
 ```
 AVR Memory Usage
@@ -783,7 +980,10 @@ Build finished
 
 Die genauen Zahlen können etwas abweichen. Wichtig ist: **`Program:`** liegt bei ein paar hundert Byte, und ganz unten steht `Build finished` ohne Fehler.
 
-Die Zeile sagt dir, wie viel vom 32-KB-Flash dein Programm belegt. Nützlich später, wenn Programme größer werden.
+Was die Zeilen bedeuten:
+
+- **`Program`** — wie viel vom 32-KB-Flash dein Programm belegt. Hier gut 400 Byte, also gut ein Prozent.
+- **`Data`** — wie viel vom 2-KB-RAM fest belegt ist. Wird später wichtig, wenn du größere Variablen anlegst.
 
 > ### ✅ Kontrolle
 > - Unten steht **Build finished**, kein roter Text.
@@ -794,6 +994,8 @@ Die Zeile sagt dir, wie viel vom 32-KB-Flash dein Programm belegt. Nützlich sp�
 > **Fehler „expects a compile time integer constant" aus delay.h**: Die Optimierung fehlt. Prüfe, ob `-Os` in der `add_compile_options`-Liste steht.
 >
 > **Fehler „'UBRRH' undeclared"**: `-mmcu=atmega32` fehlt oder ist falsch geschrieben. Prüfe die Zeile `set(MCU atmega32)`.
+>
+> **Fehler „F_CPU fehlt"**: In der `CMakeLists.txt` fehlt entweder `set(F_CPU 8000000UL)` oder die Zeile `-DF_CPU=${F_CPU}` in den Compiler-Optionen.
 
 ---
 
@@ -801,19 +1003,25 @@ Die Zeile sagt dir, wie viel vom 32-KB-Flash dein Programm belegt. Nützlich sp�
 
 Jetzt wandert das Programm in den Chip.
 
-**Vorher prüfen:**
+## 9.1 — Vorher prüfen
+
 - Programmiergerät hängt am PC und am Board
-- Chip sitzt im Sockel, Hebel geschlossen
+- Chip sitzt im Sockel, Kerbe zum Stromanschluss, Hebel geschlossen
 - Board hat Strom
+- In der `CMakeLists.txt` steht bei `set(PORT ...)` deine Portnummer
 
-Dann:
+## 9.2 — Ausführen
 
-1. Oben rechts in der Auswahlliste **`flash`** wählen.
+1. Im Auswahlfeld oben rechts **`flash`** wählen.
 2. Auf den **grünen Pfeil** klicken (oder Umschalt+F10).
 
-CLion baut bei Bedarf neu und ruft dann avrdude auf.
+> ⚠️ **Nicht den Hammer benutzen.** Der baut nur und ruft avrdude nicht auf. Es passiert dann scheinbar etwas, aber im Chip landet nichts. Das ist einer der häufigsten Stolpersteine.
 
-## Was in der Ausgabe stehen muss
+Unten öffnet sich der Reiter **Run** mit der Ausgabe von avrdude.
+
+CLion baut dabei automatisch vorher neu, falls du den Code geändert hast. Du musst also nicht erst den Hammer drücken und dann den Pfeil — der Pfeil allein genügt.
+
+## 9.3 — Was in der Ausgabe stehen muss
 
 ```
 Writing | ################################################## | 100%
@@ -824,10 +1032,12 @@ avrdude: 412 bytes of flash verified
 Avrdude done.  Thank you.
 ```
 
-Die Zeile mit `verified` ist die wichtige: avrdude hat das Geschriebene zurückgelesen und verglichen. Steht sie da, liegt dein Programm korrekt im Chip.
+Die Zeile mit `verified` ist die wichtige: avrdude hat das Geschriebene zurückgelesen und mit dem Original verglichen. Steht sie da, liegt dein Programm korrekt im Chip und läuft bereits.
 
 > ### ✅ Kontrolle
 > In der Ausgabe steht `flash verified` und am Ende `Avrdude done`.
+>
+> **Es passiert gar nichts oder nur „Build finished"**: Du hast den Hammer statt des grünen Pfeils benutzt, oder im Auswahlfeld steht noch `hello.elf`.
 >
 > **Steht dort „initialization failed"**: Siehe [Teil 11](#teil-11--wenn-etwas-nicht-klappt).
 >
@@ -1049,7 +1259,7 @@ Die LED muss **einmal pro Sekunde** an- und ausgehen. Blinkt sie deutlich langsa
 | **DIP-40** | Bauform: 40 Beine in zwei Reihen |
 | **EEPROM** | Kleiner Speicher im Chip, der ohne Strom erhalten bleibt |
 | **ELF** | Dateiformat des Compilers, enthält Maschinencode plus Zusatzinformationen |
-| **F_CPU** | Konstante im Programm, die die Taktfrequenz angibt. Muss zum Quarz passen |
+| **F_CPU** | Taktfrequenz des Chips. Steht bei uns in der `CMakeLists.txt`, nicht im Quelltext. Muss zum Quarz passen |
 | **Flash** | Programmspeicher des Chips. 32 KB beim ATmega32 |
 | **Flashen** | Das Programm in den Flash schreiben |
 | **Fuse** | Dauerhafte Grundeinstellung im Chip |
@@ -1061,6 +1271,7 @@ Die LED muss **einmal pro Sekunde** an- und ausgehen. Blinkt sie deutlich langsa
 | **RAM** | Arbeitsspeicher für Variablen. 2 KB beim ATmega32. Nach dem Ausschalten leer |
 | **Register** | Speicherstelle im Chip, über die Hardware gesteuert wird |
 | **Reset** | Neustart des Chips |
+| **Target** | Auswählbarer Eintrag in CLion oben rechts. Legt fest, was beim Klick passiert |
 | **Toolchain** | Die Sammlung aus Compiler, Linker und Hilfsprogrammen |
 | **UART** | Serielle Schnittstelle des Chips |
 | **ZIF-Sockel** | Sockel mit Hebel, aus dem sich Chips ohne Kraft entnehmen lassen |
@@ -1080,6 +1291,9 @@ avrdude -c stk500v2 -P COM4 -p m32 -U lfuse:r:-:h -U hfuse:r:-:h
 
 # Fuses setzen (8-MHz-Quarz)
 avrdude -c stk500v2 -P COM4 -p m32 -U lfuse:w:0xff:m -U hfuse:w:0xd9:m
+
+# Fuses setzen (16-MHz-Quarz, spaetere Baugruppe)
+avrdude -c stk500v2 -P COM4 -p m32 -U lfuse:w:0xff:m -U hfuse:w:0xc9:m
 
 # Programm aufspielen
 avrdude -c stk500v2 -P COM4 -p m32 -U flash:w:hello.hex:i
@@ -1110,8 +1324,9 @@ avrdude -c stk500v2 -P COM4 -p m32 -B 125kHz -v
 |---|---|
 | Signatur ATmega32 | `1E 95 02` |
 | Werkseinstellung Fuses | lfuse `0xE1`, hfuse `0x99` |
-| **Unsere Einstellung** | **lfuse `0xFF`, hfuse `0xD9`** |
-| Taktfrequenz | 8 MHz → `F_CPU = 8000000UL` |
+| **Unsere Einstellung (8 MHz)** | **lfuse `0xFF`, hfuse `0xD9`** |
+| Spätere Baugruppe (16 MHz) | lfuse `0xFF`, hfuse `0xC9` |
+| Taktfrequenz | 8 MHz → `F_CPU = 8000000UL` in der `CMakeLists.txt` |
 | Baudrate | 9600 |
 
 ---
@@ -1122,7 +1337,7 @@ Zum Abhaken beim ersten Durchgang.
 
 **Vorbereitung**
 
-- [ ] Chip sitzt im Sockel, Kerbe richtig, Hebel eingerastet
+- [ ] Chip sitzt im Sockel, **Kerbe zum Stromanschluss**, Hebel eingerastet
 - [ ] Auf dem Quarz steht 8 MHz
 - [ ] Programmiergerät per USB am PC
 - [ ] ISP-Kabel am Board, Pin-1-Markierungen passen
@@ -1157,9 +1372,9 @@ Zum Abhaken beim ersten Durchgang.
 
 **Bauen und Flashen**
 
-- [ ] Build läuft durch, `Build finished`
+- [ ] Target `hello.elf` + **Hammer** → `Build finished`
 - [ ] `hello.hex` existiert
-- [ ] Flashen meldet `flash verified`
+- [ ] Target `flash` + **grüner Pfeil** → `flash verified`
 
 **Ausgabe**
 
