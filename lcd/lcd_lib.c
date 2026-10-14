@@ -88,7 +88,7 @@ void LCD4_write_double(double data)
 {
 	const int mindestZahlDerStellen = 1;
 	const int nachkommastellen = 2;
-	char buffer[20];
+	char buffer[48];  // reicht auch fuer sehr grosse double-Werte
 
 	dtostrf(data, mindestZahlDerStellen, nachkommastellen, buffer);
 	LCD4_write_string(buffer);
@@ -156,4 +156,36 @@ void LCD4_create_char(unsigned char slot, const unsigned char pattern[8])
 		LCD4_write(pattern[i]);
 	}
 	LCD4_cmd(0x80);                          // zurueck zum DDRAM
+}
+
+void LCD4_write_segment(unsigned char segment, const char *text)
+{
+	if (segment < 1 || segment > 4)
+		return;
+
+	int zeile  = (segment <= 2) ? 1 : 2;
+	int spalte = (segment & 1) ? LCD_SEG_LEFT_COL : LCD_SEG_RIGHT_COL;
+
+	LCD4_gotoxy(zeile, spalte);
+	for (unsigned char i = 0; i < LCD_SEG_WIDTH; i++)
+	{
+		if (*text)
+			LCD4_write(*text++);
+		else
+			LCD4_write(' ');
+	}
+}
+
+void LCD4_write_segment_int(unsigned char segment, int value)
+{
+	char buffer[8];  // "-32768" + '\0'
+	itoa(value, buffer, 10);
+	LCD4_write_segment(segment, buffer);
+}
+
+void LCD4_write_segment_double(unsigned char segment, double value, unsigned char nachkommastellen)
+{
+	char buffer[48];
+	dtostrf(value, 1, nachkommastellen, buffer);
+	LCD4_write_segment(segment, buffer);
 }

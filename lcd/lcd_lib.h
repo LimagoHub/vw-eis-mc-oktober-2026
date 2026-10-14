@@ -29,6 +29,17 @@
 
 #define LCD_COLUMNS 16   /* Zeichen pro Zeile */
 
+/* Segmente: Jede Zeile ist in zwei Felder zu je LCD_SEG_WIDTH Zeichen
+ * aufgeteilt. Zwischen und hinter den Feldern bleiben Leerzeichen frei.
+ *
+ *   Spalte:  1      6 7 8 9     14 15 16
+ *           [Segment 1] .. [Segment 2] ..     <- Zeile 1
+ *           [Segment 3] .. [Segment 4] ..     <- Zeile 2
+ */
+#define LCD_SEG_WIDTH       6
+#define LCD_SEG_LEFT_COL    1   /* Startspalte von Segment 1 und 3 */
+#define LCD_SEG_RIGHT_COL   9   /* Startspalte von Segment 2 und 4 */
+
 /* ------------------------------------------------------------------ */
 /* Grundfunktionen                                                    */
 /* ------------------------------------------------------------------ */
@@ -126,6 +137,26 @@ void LCD4_write_bin(unsigned char data);
  * deren Anfang. So kann man einen Wert aktualisieren, ohne das ganze
  * Display zu loeschen (das wuerde flackern). */
 void LCD4_clear_line(int zeile);
+
+/* Beschreibt eines der 4 Anzeige-Segmente (siehe LCD_SEG_WIDTH oben):
+ *   segment 1 = Zeile 1 links,  segment 2 = Zeile 1 rechts,
+ *   segment 3 = Zeile 2 links,  segment 4 = Zeile 2 rechts.
+ * Der Text wird auf 6 Zeichen gekuerzt, wenn er zu lang ist, und mit
+ * Leerzeichen aufgefuellt, wenn er zu kurz ist. Dadurch bleiben keine
+ * Reste vom alten Wert stehen und das Display muss nicht geloescht
+ * werden (kein Flackern).
+ * Beispiel: LCD4_write_segment(3, "12.5C");
+ * Ungueltige Segmentnummern werden ignoriert. */
+void LCD4_write_segment(unsigned char segment, const char *text);
+
+/* Wie LCD4_write_segment, aber fuer Zahlen - die Umwandlung in Text
+ * uebernimmt die Funktion. Passt die Zahl nicht in 6 Zeichen, wird
+ * sie hinten abgeschnitten (z.B. 1234567 -> "123456"). */
+void LCD4_write_segment_int(unsigned char segment, int value);
+
+/* Kommazahl in ein Segment, mit frei waehlbaren Nachkommastellen.
+ * Beispiel: LCD4_write_segment_double(2, 21.456, 1) zeigt "21.5". */
+void LCD4_write_segment_double(unsigned char segment, double value, unsigned char nachkommastellen);
 
 /* Legt ein eigenes Zeichen an. Das Display kann 8 selbst gemalte
  * Zeichen speichern (slot 0..7). Ein Zeichen ist 5 Punkte breit und

@@ -92,7 +92,21 @@ int main(void)
         LCD4_write_string("BBBBB");
         _delay_ms(2000);
 
-        /* 8) Lauftext: gesamten Inhalt nach links schieben */
+        /* 8) Segmente: 4 Felder mit je 6 Zeichen */
+        LCD4_clear();
+        LCD4_write_segment(1, "T1:");
+        LCD4_write_segment(2, "T2:");
+        LCD4_write_segment(3, "21.5C");
+        LCD4_write_segment(4, "19.0C");
+        _delay_ms(2000);
+        LCD4_write_segment(3, "7");        /* kurzer Wert: Rest wird geloescht */
+        LCD4_write_segment(4, "ZULANGERTEXT"); /* wird auf 6 Zeichen gekuerzt */
+        _delay_ms(2000);
+        LCD4_write_segment_int(3, -42);
+        LCD4_write_segment_double(4, 3.14159, 2);
+        _delay_ms(2000);
+
+        /* 9) Lauftext: gesamten Inhalt nach links schieben */
         LCD4_clear();
         LCD4_write_at(1, 1, "Lauftext - Lauftext");
         _delay_ms(1000);
