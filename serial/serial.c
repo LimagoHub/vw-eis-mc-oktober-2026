@@ -2,7 +2,7 @@
 // Created by JoachimWagner on 15.10.2026.
 //
 #include "serial.h"
-
+#include <stdlib.h>
 void serial_init() {
     // Baudrate: UBRRH und UBRRL (UBRRH mit Bit 7 = 0 schreiben -> wird als UBRRH erkannt)
     UBRRH = (uint8_t) (MYUBRR >> 8);
@@ -80,4 +80,15 @@ void serial_send_string_nl(const char *stringToSend)
 {
     serial_send_string(stringToSend);
     serial_send_string("\r\n");
+}
+
+void serial_send_int(uint16_t valueToSend) {
+    char buffer[32];
+    itoa(valueToSend, buffer, 10);
+    serial_send_string(buffer);
+}
+void serial_send_float(float valueToSend) {
+    char buffer[32];
+    dtostrf(valueToSend, 10, 2, buffer);
+    serial_send_string(buffer);
 }

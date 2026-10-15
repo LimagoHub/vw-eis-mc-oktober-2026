@@ -17,6 +17,8 @@ uint8_t serial_received();
 void serial_send_char(uint8_t valueToSend);
 void serial_send_string(const char *stringToSend);
 void serial_send_string_nl(const char *stringToSend);
+void serial_send_int(uint16_t valueToSend);
+void serial_send_float(float valueToSend);
 
 
 #endif //SERIAL_SERIAL_H
