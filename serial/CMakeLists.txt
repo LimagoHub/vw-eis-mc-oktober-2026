@@ -24,7 +24,9 @@ add_link_options(
         -Wl,-Map=${PROJECT_NAME}.map
 )
 # Das eigentliche Programm
-add_executable(${PROJECT_NAME}.elf main.c)
+add_executable(${PROJECT_NAME}.elf main.c
+        serial.h
+        serial.c)
 # Nach dem Uebersetzen: HEX-Datei erzeugen und Groesse anzeigen
 add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
         COMMAND avr-objcopy -O ihex -R .eeprom
