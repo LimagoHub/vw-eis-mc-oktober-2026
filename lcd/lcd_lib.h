@@ -2,6 +2,12 @@
 #define LCD_LIB_H
 
 /*
+ * Wechsel auf Port C: Nur im Verdrahtungsblock unten LCD_DATA von PORTB auf
+ * PORTC und LCD_DDR von DDRB auf DDRC aendern und die Pins PB0..PB7 durch
+ * PC0..PC7 ersetzen. Das Display muss dann natuerlich an Port C haengen.
+ */
+
+/*
  * Bibliothek fuer ein 2x16-Zeichen-LCD (HD44780-kompatibel) im 4-Bit-Modus.
  *
  * Kurz erklaert:

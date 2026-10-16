@@ -25,7 +25,8 @@ add_link_options(
 )
 # Das eigentliche Programm
 add_executable(${PROJECT_NAME}.elf main.c
-        adc.c adc.h)
+        adc.c adc.h
+        serial.c)
 # Nach dem Uebersetzen: HEX-Datei erzeugen und Groesse anzeigen
 add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
         COMMAND avr-objcopy -O ihex -R .eeprom
